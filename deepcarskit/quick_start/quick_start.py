@@ -64,7 +64,7 @@ def eval_folds(args_tuple):
     return best_valid_score_fold, best_valid_result_fold
 
 
-def run(model=None, dataset=None, config_file_list=None, config_dict=None, saved=True):
+def run(model=None, dataset=None, config_file_list=None, config_dict=None, saved=True, custom_config_dict=None):
     r""" A fast running api, which includes the complete process of
     training and testing a model on a specified dataset
 
@@ -79,9 +79,14 @@ def run(model=None, dataset=None, config_file_list=None, config_dict=None, saved
     config = CARSConfig(model=model, dataset=dataset, config_file_list=config_file_list, config_dict=config_dict)
     init_seed(config['seed'], config['reproducibility'])
 
+    # Custom Configration of parameters
+    if custom_config_dict is not None:
+        for key, value in custom_config_dict.items():
+            config[key] = value
+
     # logger initialization
     log_handler, log_filepath = init_logger(config)
-    logger = getLogger()
+    logger = getLogger()    
 
     logger.info(config)
 
