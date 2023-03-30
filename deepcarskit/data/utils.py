@@ -115,11 +115,7 @@ def data_preparation(config, dataset, save=False):
 
 
     CV = True
-    temp_built_datasets = dataset.build()
-    built_datasets = temp_built_datasets.copy()
-
-    # Delete the 5th key from built_datasets
-    del built_datasets[5]
+    built_datasets = dataset.build()
 
     if isinstance(built_datasets, list):
         CV = False
@@ -163,17 +159,8 @@ def data_preparation(config, dataset, save=False):
             valid.append(valid_data)
             # if save:
                 # save_split_dataloaders(config, dataloaders=(train_data, valid_data))
-        # Test dataset creation
-        test_sampler = create_samplers(config, dataset, temp_built_datasets[5])
-        test_data = get_dataloader(config, 'train')(config, temp_built_datasets[5][0], test_sampler, shuffle=True)
-        
-        logger.info(
-            set_color('[Testing]: ', 'pink') + set_color('test_batch_size', 'cyan') + ' = ' +
-            set_color(f'[{config["train_batch_size"]}]', 'yellow') + set_color(' negative sampling', 'cyan') + ': ' +
-            set_color(f'[{config["neg_sampling"]}]', 'yellow')
-        )
 
-        return train, valid, test_data
+        return train, valid
     else:
         train_dataset, valid_dataset = built_datasets
         train_sampler, valid_sampler = create_samplers(config, dataset, built_datasets)

@@ -35,17 +35,15 @@ if __name__ == '__main__':
 
     config_list = args.config_files.strip().split(' ') if args.config_files else None
 
-    learning_rates = [10**(-i) for i in range(2, 7)]
-    learners = ["RMSprop"]
-    models = ["FM", "DeepFM"]
-    embedding_sizes = [32, 64, 128, 256, 512]
-    weight_decays = [0.0, 0.01, 0.1]
-    train_batch_sizes = [500, 1000]
+    def objective(trial):
+        hyper = pd.read_csv('hyper_neucmf_optuna.csv')
+        learning_rate = trial.suggest_loguniform('learning_rate', 1e-6, 1e-1)
+        learner = trial.suggest_categorical('learner', ['adam', 'RMSprop'])
+        model = trial.suggest_categorical('model', ['NeuCMF0i', 'NeuCMF0w', 'NeuCMFi0', 'NeuCMFii', 'NeuCMFw0', 'NeuCMFww'])
+        embedding_size = trial.suggest_categorical('embedding_size', [32, 64, 128, 256, 512])
+        weight_decay = trial.suggest_categorical('weight_decay', [0.0, 0.01, 0.1])
+        train_batch_size = trial.suggest_categorical('train_batch_size', [500, 1000])
 
-    hyper = pd.read_csv('hyper_fms_gs.csv')
-
-    prod = product(learning_rates, learners, models, embedding_sizes, weight_decays, train_batch_sizes)
-    for learning_rate, learner, model, embedding_size, weight_decay, train_batch_size in prod:
         custom_config_dict = {
             "learning_rate": learning_rate,
             "learner": learner,
@@ -61,7 +59,12 @@ if __name__ == '__main__':
             [[learning_rate, learner, model, embedding_size, weight_decay, train_batch_size, metrics['best_valid_result']['mae']]], columns=['learning_rate', 'learner', 'model', 'embedding_size', 'weight_decay', 'train_batch_size', 'mae']
         )])
 
-        hyper.to_csv('hyper_fms_gs.csv', index=False)
+        hyper.to_csv('hyper_neucmf_optuna.csv', index=False)
+
+        return metrics['best_valid_result']['mae']
+
+    study = optuna.create_study(direction='minimize')
+    study.optimize(objective, n_trials=1000) 
 
     t1 = time.time()
     total = t1 - t0

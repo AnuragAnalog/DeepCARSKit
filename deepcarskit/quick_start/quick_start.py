@@ -124,7 +124,7 @@ def run(model=None, dataset=None, config_file_list=None, config_dict=None, saved
 
     # dataset splitting
     # train_data, valid_data, test_data = data_preparation(config, dataset)
-    train_data, valid_data, test_data = data_preparation(config, dataset)
+    train_data, valid_data = data_preparation(config, dataset)
 
     CV = False
     if isinstance(train_data, list):
@@ -137,16 +137,9 @@ def run(model=None, dataset=None, config_file_list=None, config_dict=None, saved
         for i in range(n_folds):
             t = (train_data[i], valid_data[i], config, logger, (i+1))
             list_train_test.append(t)
-            t = (train_data[i], test_data, config, logger, (i+1))
-            list_train_real_test.append(t)
 
         pool = ThreadPool()
         rsts = pool.map(eval_folds, list_train_test)
-        pool.close()
-        pool.join()
-
-        pool = ThreadPool()
-        rsts_test = pool.map(eval_folds_test, list_train_real_test)
         pool.close()
         pool.join()
 
@@ -176,34 +169,6 @@ def run(model=None, dataset=None, config_file_list=None, config_dict=None, saved
         logger_name = log_filepath[:-4] + "_" + config['valid_metric'] + " = " + str(best_valid_score) + ".log"
         shutil.move(log_filepath, logger_name)
         update_best_log(config, logger_name, best_valid_result)
-
-        # Added a test suffix to each variable of copied text
-        best_test_score = 0
-        best_test_result = {}
-
-        for rst_fold in rsts_test:
-            test_score_fold = rst_fold[0]
-            test_result_fold = rst_fold[1]
-
-            best_test_score += test_score_fold
-            if not best_test_result:
-                best_test_result = test_result_fold
-            else:
-                for key in best_test_result.keys():
-                    best_test_result[key] = best_test_result[key] + test_result_fold[key]
-
-        best_test_score = round(best_test_score/n_folds, config['metric_decimal_place'])
-        for key in best_test_result:
-            best_test_result[key] = round(best_test_result[key]/n_folds, config['metric_decimal_place'])
-        msghead = 'Data: '+config['dataset']+', Results on '+str(n_folds)+' CV: best valid by '+config['model']
-        layers = [str(int) for int in config['mlp_hidden_size']]
-        layers = ' '.join(layers)
-        logger.info(set_color(msghead, 'yellow') + f': {best_test_result}'+', lrate: '+str(config['learning_rate'])+', layers: ['+layers+']')
-        log_handler.close()
-        logger.removeHandler(log_handler)
-        logger_name = log_filepath[:-4] + "_" + config['valid_metric'] + " = " + str(best_test_score) + ".log"
-        shutil.move(log_filepath, logger_name)
-        update_best_log(config, logger_name, best_test_result)
     else:
         if config['save_dataloaders']:
             save_split_dataloaders(config, dataloaders=(train_data, valid_data))
