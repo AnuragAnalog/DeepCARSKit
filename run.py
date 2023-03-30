@@ -6,6 +6,7 @@ import argparse
 import time
 import torch
 import pandas as pd
+import optuna
 import multiprocessing as mcpu
 from deepcarskit.quick_start import run
 from logging import getLogger
@@ -14,7 +15,6 @@ from itertools import product
 # Experiment Setup
 # mlflow.set_tracking_uri("../mlflow")
 # mlflow.set_experiment("DeepCarsKit - TripAdvisor")
-
 
 if __name__ == '__main__':
     print('GPU availability: ', torch.cuda.is_available())
@@ -35,14 +35,14 @@ if __name__ == '__main__':
 
     config_list = args.config_files.strip().split(' ') if args.config_files else None
 
-    learning_rates = [10**(-i) for i in range(3, 6)]
-    learners = ["adam", "RMSprop"]
-    models = ["NeuCMFii", "NeuCMFww", "NeuCMF0i", "NeuCMFi0", "NeuCMF0w", "NeuCMFw0"]
-    embedding_sizes = [32]
-    weight_decays = [0.0]
-    train_batch_sizes = [500]
+    learning_rates = [10**(-i) for i in range(2, 7)]
+    learners = ["RMSprop"]
+    models = ["FM", "DeepFM"]
+    embedding_sizes = [32, 64, 128, 256, 512]
+    weight_decays = [0.0, 0.01, 0.1]
+    train_batch_sizes = [500, 1000]
 
-    hyper = pd.DataFrame(columns=['learning_rate', 'learner', 'model', 'embedding_size', 'weight_decay', 'train_batch_size', 'mae'])
+    hyper = pd.read_csv('hyper_fms_gs.csv')
 
     prod = product(learning_rates, learners, models, embedding_sizes, weight_decays, train_batch_sizes)
     for learning_rate, learner, model, embedding_size, weight_decay, train_batch_size in prod:
@@ -55,13 +55,13 @@ if __name__ == '__main__':
             "train_batch_size": train_batch_size
         }
 
-        metrics = run(config_file_list=config_list)
-        metrics["best_valid_result"]
+        metrics = run(config_file_list=config_list, custom_config_dict=custom_config_dict)
 
-        hyper = hyper.append([learning_rate, learner, model, embedding_size, weight_decay, train_batch_size, metrics["best_valid_result"]])
+        hyper = pd.concat([hyper, pd.DataFrame(
+            [[learning_rate, learner, model, embedding_size, weight_decay, train_batch_size, metrics['best_valid_result']['mae']]], columns=['learning_rate', 'learner', 'model', 'embedding_size', 'weight_decay', 'train_batch_size', 'mae']
+        )])
 
-    print(hyper.head())
-    hyper.to_csv('hyper.csv', index=False)
+        hyper.to_csv('hyper_fms_gs.csv', index=False)
 
     t1 = time.time()
     total = t1 - t0

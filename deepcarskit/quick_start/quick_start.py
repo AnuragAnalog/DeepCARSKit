@@ -63,6 +63,32 @@ def eval_folds(args_tuple):
 
     return best_valid_score_fold, best_valid_result_fold
 
+def eval_folds_test(args_tuple):
+    train_data_fold = args_tuple[0]
+    test_data_fold = args_tuple[1]
+    config = args_tuple[2]
+    logger = args_tuple[3]
+    fold = args_tuple[4]
+
+    # model loading and initialization
+    model = get_model(config['model'])(config, train_data_fold.dataset).to(config['device'])
+
+    # trainer loading and initialization
+    trainer = get_trainer(config['MODEL_TYPE'], config['model'])(config, model)
+    name = trainer.saved_model_file
+    ind = name.rindex('.')
+    lname = list(name)
+    lname.insert(ind, '_f'+str(fold))
+    trainer.saved_model_file = ''.join(lname)
+
+    # model training
+    best_test_score_fold, best_test_result_fold = trainer.fit(
+        train_data_fold, test_data_fold, saved=True, show_progress=config['show_progress']
+    )
+    msghead = 'Fold ' + str(fold) + ' completed: '
+    logger.info(set_color(msghead, 'yellow') + f': {best_test_result_fold}')
+
+    return best_test_score_fold, best_test_result_fold
 
 def run(model=None, dataset=None, config_file_list=None, config_dict=None, saved=True, custom_config_dict=None):
     r""" A fast running api, which includes the complete process of
@@ -98,8 +124,7 @@ def run(model=None, dataset=None, config_file_list=None, config_dict=None, saved
 
     # dataset splitting
     # train_data, valid_data, test_data = data_preparation(config, dataset)
-    train_data, valid_data = data_preparation(config, dataset)
-
+    train_data, valid_data, test_data = data_preparation(config, dataset)
 
     CV = False
     if isinstance(train_data, list):
@@ -108,12 +133,20 @@ def run(model=None, dataset=None, config_file_list=None, config_dict=None, saved
 
     if CV:
         list_train_test = []
+        list_train_real_test = []
         for i in range(n_folds):
             t = (train_data[i], valid_data[i], config, logger, (i+1))
             list_train_test.append(t)
+            t = (train_data[i], test_data, config, logger, (i+1))
+            list_train_real_test.append(t)
 
         pool = ThreadPool()
         rsts = pool.map(eval_folds, list_train_test)
+        pool.close()
+        pool.join()
+
+        pool = ThreadPool()
+        rsts_test = pool.map(eval_folds_test, list_train_real_test)
         pool.close()
         pool.join()
 
@@ -143,6 +176,34 @@ def run(model=None, dataset=None, config_file_list=None, config_dict=None, saved
         logger_name = log_filepath[:-4] + "_" + config['valid_metric'] + " = " + str(best_valid_score) + ".log"
         shutil.move(log_filepath, logger_name)
         update_best_log(config, logger_name, best_valid_result)
+
+        # Added a test suffix to each variable of copied text
+        best_test_score = 0
+        best_test_result = {}
+
+        for rst_fold in rsts_test:
+            test_score_fold = rst_fold[0]
+            test_result_fold = rst_fold[1]
+
+            best_test_score += test_score_fold
+            if not best_test_result:
+                best_test_result = test_result_fold
+            else:
+                for key in best_test_result.keys():
+                    best_test_result[key] = best_test_result[key] + test_result_fold[key]
+
+        best_test_score = round(best_test_score/n_folds, config['metric_decimal_place'])
+        for key in best_test_result:
+            best_test_result[key] = round(best_test_result[key]/n_folds, config['metric_decimal_place'])
+        msghead = 'Data: '+config['dataset']+', Results on '+str(n_folds)+' CV: best valid by '+config['model']
+        layers = [str(int) for int in config['mlp_hidden_size']]
+        layers = ' '.join(layers)
+        logger.info(set_color(msghead, 'yellow') + f': {best_test_result}'+', lrate: '+str(config['learning_rate'])+', layers: ['+layers+']')
+        log_handler.close()
+        logger.removeHandler(log_handler)
+        logger_name = log_filepath[:-4] + "_" + config['valid_metric'] + " = " + str(best_test_score) + ".log"
+        shutil.move(log_filepath, logger_name)
+        update_best_log(config, logger_name, best_test_result)
     else:
         if config['save_dataloaders']:
             save_split_dataloaders(config, dataloaders=(train_data, valid_data))
