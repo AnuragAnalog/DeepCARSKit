@@ -35,7 +35,8 @@ if __name__ == '__main__':
 
     config_list = args.config_files.strip().split(' ') if args.config_files else None
 
-    hyper = pd.read_csv('ta_hyper_neucmf_gs.csv')
+    filename = 'frappe_hyper_neucmf_gs.csv'
+    hyper = pd.read_csv(f"./hypers/{filename}")
     learning_rates = [10**(-i) for i in range(3, 7)]
     learners = ['adam', 'RMSprop']
     models = ['NeuCMF0i', 'NeuCMF0w', 'NeuCMFi0', 'NeuCMFii', 'NeuCMFw0', 'NeuCMFww']
@@ -59,7 +60,7 @@ if __name__ == '__main__':
             [[learning_rate, learner, model, embedding_size, weight_decay, train_batch_size, metrics['best_valid_result']['mae']]], columns=['learning_rate', 'learner', 'model', 'embedding_size', 'weight_decay', 'train_batch_size', 'mae']
         )])
 
-        hyper.to_csv('ta_hyper_neucmf_gs.csv', index=False)
+        hyper.to_csv(f"./hypers/{filename}", index=False)
 
     t1 = time.time()
     total = t1 - t0

@@ -9,14 +9,14 @@ save_dataloaders: False
 
 ############### data setting ###############
 seed: 2022
-dataset: tripadvisor
+dataset: frappe
 # define data_path as the parent directory of your data folder
 # data_path: d:\dataset\
 
-USER_ID_FIELD: user_id
-ITEM_ID_FIELD: item_id
-RATING_FIELD: rating
-CONTEXT_SITUATION_FIELD: contexts
+USER_ID_FIELD: user
+ITEM_ID_FIELD: item
+RATING_FIELD: cnt
+CONTEXT_SITUATION_FIELD: context
 USER_CONTEXT_FIELD: uc_id
 
 # note: you can use either load or unload, cannot use them both
