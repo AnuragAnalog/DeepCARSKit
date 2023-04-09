@@ -6,7 +6,6 @@ import argparse
 import time
 import torch
 import pandas as pd
-import optuna
 import multiprocessing as mcpu
 from deepcarskit.quick_start import run
 from logging import getLogger
@@ -35,12 +34,13 @@ if __name__ == '__main__':
 
     config_list = args.config_files.strip().split(' ') if args.config_files else None
 
-    filename = 'frappe_hyper_neucmf_gs.csv'
+    filename = 'frappe_hyper_fms_gs.csv'
     hyper = pd.read_csv(f"./hypers/{filename}")
-    learning_rates = [10**(-i) for i in range(3, 7)]
-    learners = ['adam', 'RMSprop']
-    models = ['NeuCMF0i', 'NeuCMF0w', 'NeuCMFi0', 'NeuCMFii', 'NeuCMFw0', 'NeuCMFww']
-    embedding_sizes = [32, 64]
+    learning_rates = [10**(-i) for i in range(5, 6)]
+    learners = ['RMSprop']
+    # models = ['NeuCMF0i', 'NeuCMF0w', 'NeuCMFi0', 'NeuCMFii', 'NeuCMFw0', 'NeuCMFww']
+    models = ['DeepFM']
+    embedding_sizes = [64]
     weight_decays = [0.0, 0.01, 0.1]
     train_batch_sizes = [500, 1000]
 
