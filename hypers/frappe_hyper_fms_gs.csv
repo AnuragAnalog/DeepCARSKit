@@ -271,3 +271,7 @@ learning_rate,learner,model,embedding_size,weight_decay,train_batch_size,mae
 1e-05,RMSprop,FM,32,0.1,1000,0.6771
 1e-05,RMSprop,DeepFM,64,0.0,500,0.489
 1e-05,RMSprop,DeepFM,64,0.0,1000,0.4892
+1e-05,RMSprop,DeepFM,64,0.01,500,0.5123
+1e-05,RMSprop,DeepFM,64,0.01,1000,0.5745
+1e-05,RMSprop,DeepFM,64,0.1,500,0.6725
+1e-05,RMSprop,DeepFM,64,0.1,1000,0.6759
