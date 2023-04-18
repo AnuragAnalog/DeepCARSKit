@@ -5,6 +5,7 @@
 import argparse
 import time
 import torch
+import optuna
 import pandas as pd
 import multiprocessing as mcpu
 from deepcarskit.quick_start import run
@@ -34,18 +35,16 @@ if __name__ == '__main__':
 
     config_list = args.config_files.strip().split(' ') if args.config_files else None
 
-    filename = 'frappe_hyper_fms_gs.csv'
-    hyper = pd.read_csv(f"./hypers/{filename}")
-    learning_rates = [10**(-i) for i in range(5, 6)]
-    learners = ['RMSprop']
-    # models = ['NeuCMF0i', 'NeuCMF0w', 'NeuCMFi0', 'NeuCMFii', 'NeuCMFw0', 'NeuCMFww']
-    models = ['DeepFM']
-    embedding_sizes = [64]
-    weight_decays = [0.0, 0.01, 0.1]
-    train_batch_sizes = [500, 1000]
+    def objective(trial):
+        filename = 'frappe_hyper_neucmf_optuna.csv'
+        hyper = pd.read_csv(f"./hypers/{filename}")
+        learning_rate = trial.suggest_loguniform('learning_rate', 1e-5, 1e-1)
+        learner = trial.suggest_categorical('learner', ['adam', 'RMSprop'])
+        model = trial.suggest_categorical('model', ['NeuCMFii', 'NeuCMFww', 'NeuCMFi0', 'NeuCMF0i', 'NeuCMFw0', 'NeuCMF0w'])
+        embedding_size = trial.suggest_categorical('embedding_size', [32, 64, 128, 256, 512])
+        weight_decay = trial.suggest_loguniform('weight_decay', 1e-5, 1e-1)
+        train_batch_size = trial.suggest_categorical('train_batch_size', [500, 1000, 2000, 4000])
 
-    prod = list(product(learning_rates, learners, models, embedding_sizes, weight_decays, train_batch_sizes))
-    for learning_rate, learner, model, embedding_size, weight_decay, train_batch_size in prod:
         custom_config_dict = {
             "learning_rate": learning_rate,
             "learner": learner,
@@ -61,6 +60,11 @@ if __name__ == '__main__':
         )])
 
         hyper.to_csv(f"./hypers/{filename}", index=False)
+
+        return metrics['best_valid_result']['mae']
+
+    study = optuna.create_study(direction='minimize')
+    study.optimize(objective, n_trials=1000)
 
     t1 = time.time()
     total = t1 - t0
