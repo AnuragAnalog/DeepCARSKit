@@ -4,6 +4,7 @@ import os
 import wget
 import pandas as pd
 import streamlit as st
+import plotly.express as px
 
 from zipfile import ZipFile
 
@@ -51,6 +52,8 @@ hyper_type = st.sidebar.selectbox(
     ['Grid Search', 'Optuna']
 )
 
+st.sidebar.header('Choose some basic settings')
+
 fname = ''
 if dataset_type == 'TripAdvisor':
     fname += 'ta_hyper'
@@ -81,27 +84,31 @@ data_present = st.selectbox(
 st.write('## Hyperparameter Results Information')
 
 # Read the data
-data = pd.read_csv(f'./params_info/{fname}')
+try:
+    data = pd.read_csv(f'./params_info/{fname}')
+except FileNotFoundError:
+    st.write('No data found. Please try again later.')
+    st.stop()
 
 # Present the data
 if data_present == 'Table':
+    # View the data
+
+    st.write("You can click on the column names to sort the table.")
     st.dataframe(data)
 elif data_present == 'Charts':
     # Select the columns to plot
-    metrics_col = 'mae'
-    col1 = st.beta_columns(1)
-    with col1:
-        x_axis = st.selectbox(
-            'Select the x-axis',
-            data.columns
+
+    if model_type in ['NeuCMFs', 'Factorization Machines']:
+        agg_df = data.groupby(['model']).agg({'mae': 'min'}).reset_index()
+
+        st.plotly_chart(
+            px.bar(
+                agg_df,
+                x='model',
+                y='mae',
+                title='Best MAE by Model'
+            )
         )
-
-    y_axis = metrics_col
-
-    # Plot the data
-    st.write(f'## {x_axis} vs {y_axis}')
-    st.write(f'### {dataset_type} dataset')
-    st.write(f'### {model_type} model')
-    st.write(f'### {hyper_type} framework')
-    st.write(f'### {data.shape[0]} hyperparameter combinations')
-    st.bar_chart(data[[x_axis, y_axis]])
+    elif model_type == 'Matrix Factorization':
+        st.error('No charts available for Matrix Factorization model.')
