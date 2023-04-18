@@ -8,7 +8,7 @@ import streamlit as st
 from zipfile import ZipFile
 
 # URL for the data
-url = 'https://raw.githubusercontent.com/plotly/datasets/master/2014_usa_states.csv'
+url = 'https://archive.org/download/cars_results/params_info.zip'
 
 # Download the data
 if not os.path.exists('./params_info/'):
