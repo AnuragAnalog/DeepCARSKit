@@ -12,10 +12,6 @@ from deepcarskit.quick_start import run
 from logging import getLogger
 from itertools import product
 
-# Experiment Setup
-# mlflow.set_tracking_uri("../mlflow")
-# mlflow.set_experiment("DeepCarsKit - TripAdvisor")
-
 if __name__ == '__main__':
     print('GPU availability: ', torch.cuda.is_available())
 
