@@ -25,7 +25,7 @@ if not os.path.exists('./params_info/'):
 
 # Set the page configuration
 st.set_page_config(
-    page_title='Hyperparameter Results Information',
+    page_title='Results',
     page_icon=':bar_chart:',
     layout='wide',
     initial_sidebar_state='auto'
@@ -33,6 +33,8 @@ st.set_page_config(
 
 # Set the page title
 st.title('Hyperparameter Results Information')
+
+st.sidebar.header('Choose some basic settings')
 
 # Choose the dataset
 dataset_type = st.sidebar.selectbox(
@@ -52,8 +54,6 @@ hyper_type = st.sidebar.selectbox(
     ['Grid Search', 'Optuna']
 )
 
-st.sidebar.header('Choose some basic settings')
-
 fname = ''
 if dataset_type == 'TripAdvisor':
     fname += 'ta_hyper'
@@ -72,7 +72,7 @@ if hyper_type == 'Grid Search':
 elif hyper_type == 'Optuna':
     fname += '_optuna.csv'
 
-st.write(f'Applied {model_type} on {dataset_type} dataset with {hyper_type}.')
+st.markdown("Applied **{model_type}** on **{dataset_type}** dataset with **{hyper_type}**.")
 
 # Data Presentation
 data_present = st.selectbox(
@@ -87,7 +87,7 @@ st.write('## Hyperparameter Results Information')
 try:
     data = pd.read_csv(f'./params_info/{fname}')
 except FileNotFoundError:
-    st.write('No data found. Please try again later.')
+    st.error('No data found. Please try again later.')
     st.stop()
 
 # Present the data

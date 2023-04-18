@@ -39,7 +39,7 @@ if __name__ == '__main__':
     data = data.iloc[data[['user_id', 'item_id']].drop_duplicates().index, :]
 
     # Train and Test Split
-    X_train, y_train, X_update, y_update, X_test, y_test = train_update_test_split(data, frac_new_users=0.2)
+    X_train, y_train, X_update, y_update, X_test, y_test = train_update_test_split(data, frac_new_users=0.15)
     data_dict = {'X_train': X_train, 'y_train': y_train, 'X_update': X_update, 'y_update': y_update, 'X_test': X_test, 'y_test': y_test}
 
     # Optuna
