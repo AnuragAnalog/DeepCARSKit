@@ -13,3 +13,6 @@ log_tensorboard/
 doc/
 **/__pycache__/
 .idea/
+/car/
+/cars/
+/.ipynb_checkpoints/
